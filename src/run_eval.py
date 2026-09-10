@@ -2,6 +2,7 @@ import json
 
 from dotenv import load_dotenv
 from anthropic import Anthropic
+from validate_data import validate_pairs, print_answer_distribution
 import os
 
 load_dotenv()
@@ -76,47 +77,63 @@ def main():
 
     print(f"Loaded {len(items)} item(s)")
 
-    item = items[0]
-    prompt = build_prompt(item)
-    raw_output = call_model(prompt)
+    pairs, errors = validate_pairs(items)
 
-    parsed_answer = parse_answer(raw_output)
-    correct = score_answer(parsed_answer, item["answer"])
+    print(f"Found {len(pairs)} matched pair(s)")
 
-    result = {
-        "pair_id": item["pair_id"],
-        "condition": item["condition"],
-        "expected_answer": item["answer"],
-        "raw_output": raw_output,
-        "parsed_answer": parsed_answer,
-        "parse_ok": parsed_answer is not None,
-        "correct": correct,
-        "provider": "anthropic",
-        "model": "claude-haiku-4-5-20251001",
-        "prompt_version": "v0",
-    }
+    print_answer_distribution(pairs)
 
-    save_result(result, "results/run_001.jsonl")
-    
-    print()
-    print("PROMPT SENT TO MODEL:")
-    print("---------------------")
-    print(prompt)
+    if errors:
+        print("\nVALIDATION FAILED")
 
-    print()
-    print("RAW MODEL OUTPUT:")
-    print("-----------------")
-    print(raw_output)
+        for error in errors:
+            print(f"- {error}")
 
-    print()
-    print("PARSED ANSWER:")
-    print("--------------")
-    print(parsed_answer)
+        raise ValueError("Benchmark validation failed")
 
-    print()
-    print("CORRECT:")
-    print("--------")
-    print(correct)
+    print("\nVALIDATION PASSED")
+
+    for item in items:
+        prompt = build_prompt(item)
+        raw_output = call_model(prompt)
+
+        parsed_answer = parse_answer(raw_output)
+        correct = score_answer(parsed_answer, item["answer"])
+
+        result = {
+            "pair_id": item["pair_id"],
+            "condition": item["condition"],
+            "expected_answer": item["answer"],
+            "raw_output": raw_output,
+            "parsed_answer": parsed_answer,
+            "parse_ok": parsed_answer is not None,
+            "correct": correct,
+            "provider": "anthropic",
+            "model": "claude-haiku-4-5-20251001",
+            "prompt_version": "v0",
+        }
+
+        save_result(result, "results/run_003.jsonl")
+        
+        print()
+        print("PROMPT SENT TO MODEL:")
+        print("---------------------")
+        print(prompt)
+
+        print()
+        print("RAW MODEL OUTPUT:")
+        print("-----------------")
+        print(raw_output)
+
+        print()
+        print("PARSED ANSWER:")
+        print("--------------")
+        print(parsed_answer)
+
+        print()
+        print("CORRECT:")
+        print("--------")
+        print(correct)
 
 if __name__ == "__main__":
     main()
