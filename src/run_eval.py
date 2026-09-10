@@ -1,4 +1,5 @@
 import json
+import re
 
 from dotenv import load_dotenv
 from anthropic import Anthropic
@@ -42,7 +43,7 @@ Return exactly one letter: A, B, C, or D."""
 def call_model(prompt):
     message = client.messages.create(
         model="claude-haiku-4-5-20251001",
-        max_tokens=8,
+        max_tokens=256,
         messages=[
             {
                 "role": "user",
@@ -56,8 +57,28 @@ def call_model(prompt):
 def parse_answer(raw_output):
     cleaned = raw_output.strip().upper()
 
+    # Best case: exactly one letter
     if cleaned in {"A", "B", "C", "D"}:
         return cleaned
+
+    # Accept a standalone final letter
+    lines = [line.strip() for line in cleaned.splitlines() if line.strip()]
+
+    if lines:
+        final_line = lines[-1].replace("**", "").strip()
+
+        if final_line in {"A", "B", "C", "D"}:
+            return final_line
+
+    # Accept an explicit final statement such as:
+    # "The answer is A." or "The answer is **A**."
+    match = re.search(
+        r"(?:THE\s+)?ANSWER\s+IS\s+\**([ABCD])\**\.?\s*$",
+        cleaned
+    )
+
+    if match:
+        return match.group(1)
 
     return None
 
@@ -113,7 +134,7 @@ def main():
             "prompt_version": "v0",
         }
 
-        save_result(result, "results/run_003.jsonl")
+        save_result(result, "results/run_007.jsonl")
         
         print()
         print("PROMPT SENT TO MODEL:")

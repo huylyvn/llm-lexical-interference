@@ -72,10 +72,18 @@ def calculate_metrics(pairs):
     harmful_flips = 0
     beneficial_flips = 0
 
+    strict_format_ok = 0
+    format_violations = []
     for pair_id, conditions in pairs.items():
         low = conditions["low_conflict"]
         high = conditions["high_conflict"]
-
+        for condition_name, result in conditions.items():
+            if check_strict_format(result["raw_output"]):
+                strict_format_ok += 1
+            else:
+                format_violations.append(
+                    (pair_id, condition_name)
+                )
         if low["correct"]:
             low_correct += 1
 
@@ -103,6 +111,9 @@ def calculate_metrics(pairs):
     harmful_flip_rate = harmful_flips / total_pairs
     beneficial_flip_rate = beneficial_flips / total_pairs
 
+    total_cases = total_pairs * 2
+    strict_format_rate = strict_format_ok / total_cases
+
     return {
         "total_pairs": total_pairs,
         "low_correct": low_correct,
@@ -116,6 +127,10 @@ def calculate_metrics(pairs):
         "harmful_flip_rate": harmful_flip_rate,
         "beneficial_flips": beneficial_flips,
         "beneficial_flip_rate": beneficial_flip_rate,
+        "total_cases": total_cases,
+        "strict_format_ok": strict_format_ok,
+        "format_violations": format_violations,
+        "strict_format_rate": strict_format_rate,
     }
 
 
@@ -158,10 +173,24 @@ def print_metrics(metrics):
         f"{metrics['beneficial_flips']}/{metrics['total_pairs']} "
         f"({metrics['beneficial_flip_rate']:.1%})"
     )
+    print(
+    f"Strict output-format compliance: "
+    f"{metrics['strict_format_ok']}/{metrics['total_cases']} "
+    f"({metrics['strict_format_rate']:.1%})"
+    )
 
+    if metrics["format_violations"]:
+        print("Format violations:")
+
+        for pair_id, condition in metrics["format_violations"]:
+            print(f"- {pair_id} / {condition}")
+
+def check_strict_format(raw_output):
+    cleaned = raw_output.strip().upper()
+    return cleaned in {"A", "B", "C", "D"}
 
 def main():
-    results = load_results("results/run_003.jsonl")
+    results = load_results("results/run_007.jsonl")
 
     print(f"Loaded {len(results)} result(s)")
 
