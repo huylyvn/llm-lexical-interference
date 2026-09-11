@@ -94,7 +94,7 @@ def save_result(result, path):
         file.write(json.dumps(result) + "\n")
 
 def main():
-    items = load_items("data/benchmark.jsonl")
+    items = load_items("data/benchmark_v1.jsonl")
 
     print(f"Loaded {len(items)} item(s)")
 
@@ -134,7 +134,7 @@ def main():
             "prompt_version": "v0",
         }
 
-        save_result(result, "results/run_007.jsonl")
+        save_result(result, "results/run_008.jsonl")
         
         print()
         print("PROMPT SENT TO MODEL:")
