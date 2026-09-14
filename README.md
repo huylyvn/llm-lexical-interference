@@ -183,10 +183,13 @@ llm-lexical-interference/
 │   └── benchmark_v1.jsonl
 ├── results/
 │   └── README.md
-└── src/
-    ├── run_eval.py
-    ├── validate_data.py
-    └── analyze_results.py
+├── src/
+│   ├── run_eval.py
+│   ├── validate_data.py
+│   └── analyze_results.py
+└── tests/
+    ├── test_parsing.py
+    └── test_validation.py
 ```
 
 ### `data/benchmark_v1.jsonl`
@@ -203,13 +206,51 @@ Loads the benchmark, validates it, constructs the selected prompt version, calls
 
 ### `src/analyze_results.py`
 
-Groups results into matched pairs and calculates paired behavioral metrics and protocol-compliance information.
+Groups results into matched pairs and calculates paired behavioral metrics, identifies harmful and beneficial flip pairs, and reports protocol-compliance information.
+
+### `tests/test_parsing.py`
+
+Tests consequential parser and scoring behavior, including:
+
+* exact answer-letter parsing;
+* supported explicit final-answer formats;
+* conservative rejection of unsupported verbose outputs;
+* correct, incorrect, and unscorable scoring behavior.
+
+### `tests/test_validation.py`
+
+Tests benchmark pair validation, including:
+
+* valid matched pairs;
+* missing conditions;
+* duplicated conditions;
+* mismatched expected answers across paired conditions.
 
 ### `results/README.md`
 
-Public summary of the reported experimental runs and important failure cases.
+Public summary of the reported experimental runs, the complete `pair_024` case study, and the narrow interpretation of the findings.
 
 Raw result JSONL files are retained locally and are not tracked by Git by default.
+
+## Tests
+
+The core evaluation behavior can be checked without making any model API calls.
+
+Run:
+
+```powershell
+python -m unittest discover -s tests -v
+```
+
+The current test suite covers:
+
+* conservative answer parsing;
+* scoring of correct, incorrect, and unscorable outputs;
+* valid matched-pair structure;
+* detection of missing or duplicated benchmark conditions;
+* detection of mismatched expected answers across paired conditions.
+
+These tests focus on behavior that could materially affect the experiment's scoring or validity rather than attempting exhaustive test coverage.
 
 ## Reproducing the procedure
 
