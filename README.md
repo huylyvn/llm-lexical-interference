@@ -257,7 +257,7 @@ These tests focus on behavior that could materially affect the experiment's scor
 ### 1. Clone the repository
 
 ```powershell
-git clone <repository-url>
+git clone https://github.com/huylyvn/llm-lexical-interference.git
 cd llm-lexical-interference
 ```
 
