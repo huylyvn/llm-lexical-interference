@@ -2,6 +2,8 @@ import json
 from collections import defaultdict
 
 
+RESULTS_PATH = "results/reproduction_run.jsonl"
+
 def load_results(path):
     results = []
 
@@ -83,6 +85,9 @@ def calculate_metrics(pairs):
     harmful_flips = 0
     beneficial_flips = 0
 
+    harmful_flips_pairs = []
+    beneficial_flips_pairs = []
+
     parsing_failures = []
 
     strict_format_ok = 0
@@ -142,10 +147,12 @@ def calculate_metrics(pairs):
             # Correct in low conflict, wrong in high conflict.
             if low["correct"] and not high["correct"]:
                 harmful_flips += 1
+                harmful_flips_pairs.append(pair_id)
 
             # Wrong in low conflict, correct in high conflict.
             elif not low["correct"] and high["correct"]:
                 beneficial_flips += 1
+                beneficial_flips_pairs.append(pair_id)
 
     # Condition-level semantic accuracies.
     low_accuracy = (
@@ -233,8 +240,10 @@ def calculate_metrics(pairs):
         "flip_rate": flip_rate,
         "harmful_flips": harmful_flips,
         "harmful_flip_rate": harmful_flip_rate,
+        "harmful_flips_pairs": harmful_flips_pairs,
         "beneficial_flips": beneficial_flips,
         "beneficial_flip_rate": beneficial_flip_rate,
+        "beneficial_flips_pairs": beneficial_flips_pairs,
 
         "parsing_failures": parsing_failures,
         "parsing_failure_rate": parsing_failure_rate,
@@ -254,7 +263,7 @@ def format_percentage(value):
 
 def print_metrics(metrics):
     print()
-    print("BASELINE RESULTS")
+    print("RESULTS")
     print("----------------")
 
     print(
@@ -291,11 +300,19 @@ def print_metrics(metrics):
         f"({format_percentage(metrics['harmful_flip_rate'])})"
     )
 
+    if metrics["harmful_flips_pairs"]:
+        print("Harmful flip pairs:")
+        for pair_id in metrics["harmful_flips_pairs"]:
+            print(f"- {pair_id}")
     print(
         f"Beneficial flips: "
         f"{metrics['beneficial_flips']}/{metrics['scorable_pairs']} "
         f"({format_percentage(metrics['beneficial_flip_rate'])})"
     )
+    if metrics["beneficial_flips_pairs"]:
+        print("Beneficial flip pairs:")
+        for pair_id in metrics["beneficial_flips_pairs"]:
+            print(f"- {pair_id}")
 
     print(
         f"Parsing failures: "
@@ -323,7 +340,7 @@ def print_metrics(metrics):
 
 
 def main():
-    results = load_results("results/run_008.jsonl")
+    results = load_results(RESULTS_PATH)
 
     print(f"Loaded {len(results)} result(s)")
 

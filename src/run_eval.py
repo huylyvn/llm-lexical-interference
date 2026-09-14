@@ -6,6 +6,9 @@ from anthropic import Anthropic
 from validate_data import validate_pairs, print_answer_distribution
 import os
 
+PROMPT_VERSION = "v1"
+RESULTS_PATH = "results/reproduction_run.jsonl"
+
 load_dotenv()
 
 client = Anthropic()
@@ -20,7 +23,7 @@ def load_items(path):
 
     return items
 
-def build_prompt(item):
+def build_prompt_v0(item):
     choices = item["choices"]
 
     prompt = f"""Read the context and answer the multiple-choice question.
@@ -53,6 +56,39 @@ def call_model(prompt):
     )
 
     return message.content[0].text
+
+def build_prompt_v1(item):
+    choices = item["choices"]
+
+    return f"""Read the context and answer the multiple-choice question.
+
+Context:
+{item["context"]}
+
+Question:
+{item["question"]}
+
+A. {choices["A"]}
+B. {choices["B"]}
+C. {choices["C"]}
+D. {choices["D"]}
+
+Choose the answer based on the meaning of the context and question.
+Do not choose an option merely because it repeats words or phrases from the context.
+Check that the option directly answers what the question asks.
+
+Return only one letter: A, B, C, or D."""
+
+def build_prompt(item):
+    if PROMPT_VERSION == "v0":
+        return build_prompt_v0(item)
+
+    if PROMPT_VERSION == "v1":
+        return build_prompt_v1(item)
+
+    raise ValueError(
+        f"Unknown prompt version: {PROMPT_VERSION}"
+    )
 
 def parse_answer(raw_output):
     cleaned = raw_output.strip().upper()
@@ -114,6 +150,12 @@ def main():
 
     print("\nVALIDATION PASSED")
 
+    if os.path.exists(RESULTS_PATH):
+        raise FileExistsError(
+            f"{RESULTS_PATH} already exists. "
+            "Choose a new RESULTS_PATH before running another experiment."
+        )
+
     for item in items:
         prompt = build_prompt(item)
         raw_output = call_model(prompt)
@@ -131,10 +173,10 @@ def main():
             "correct": correct,
             "provider": "anthropic",
             "model": "claude-haiku-4-5-20251001",
-            "prompt_version": "v0",
+            "prompt_version": PROMPT_VERSION,
         }
 
-        save_result(result, "results/run_008.jsonl")
+        save_result(result, RESULTS_PATH)
         
         print()
         print("PROMPT SENT TO MODEL:")
